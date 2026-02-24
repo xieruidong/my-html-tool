@@ -374,7 +374,7 @@
             /* 默认背景 */
         }
 
-        /* 时间段视觉区分样式 */
+        /* 时段视觉区分样式 */
         .plan-item.period-morning {
             border-left-color: #ffc107;
             /* 晨曦黄 */
@@ -850,6 +850,9 @@
                 <button class="btn btn-outline btn-small" onclick="triggerImport()">
                     <span>📥</span> 导入恢复
                 </button>
+                <button class="btn btn-danger btn-small" onclick="resetAllData()">
+                    <span>🗑️</span> 重置全部
+                </button>
                 <input type="file" id="importFile" accept=".json" onchange="importData(this)">
             </div>
         </div>
@@ -949,7 +952,7 @@
 
                 <div class="input-group">
                     <div class="input-wrapper">
-                        <label>时间段</label>
+                        <label>时段</label>
                         <select id="planTime">
                             <option value="morning">上午</option>
                             <option value="afternoon">下午</option>
@@ -963,9 +966,9 @@
                     <div class="input-wrapper">
                         <label>分类</label>
                         <select id="planCategory">
-                            <option value="work">工作</option>
+                            <option value="work" selected>工作</option>
                             <option value="study">学习</option>
-                            <option value="life" selected>生活</option>
+                            <option value="life">生活</option>
                         </select>
                     </div>
                 </div>
@@ -1054,7 +1057,7 @@
             }
         }
 
-        // 设置默认时间段（根据当前的小时自动选择）
+        // 设置默认时段（根据当前的小时自动选择）
         function setDefaultTime() {
             const now = new Date();
             const hour = now.getHours();
@@ -1583,6 +1586,20 @@
             localStorage.setItem('plans', JSON.stringify(plans));
         }
 
+        // 清空所有数据
+        function resetAllData() {
+            confirmAction('确定要清空所有的待办事项和日计划吗？此操作不可撤销！建议先导出备份。', () => {
+                todos = [];
+                plans = [];
+                saveTodos();
+                savePlans();
+                renderTodos();
+                loadPlans();
+                updateStats();
+                showToast('所有数据已清空', 'info');
+            });
+        }
+
         // 工具函数
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -1726,7 +1743,7 @@
             // 填充到日计划输入框
             const today = getFormattedDateString();
             document.getElementById('planDate').value = today;
-            document.getElementById('planCategory').value = todo.category || 'life';
+            document.getElementById('planCategory').value = todo.category || 'work';
             document.getElementById('planContent').value = todo.title;
             document.getElementById('planContent').focus();
 
@@ -1744,7 +1761,7 @@
                     title: plan.content,
                     description: `来自计划: ${plan.date} ${plan.time}`,
                     priority: 'medium',
-                    category: plan.category || 'life',
+                    category: plan.category || 'work',
                     completed: false,
                     createdAt: new Date().toISOString()
                 };
