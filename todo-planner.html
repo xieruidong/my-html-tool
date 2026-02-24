@@ -1465,12 +1465,14 @@
         function updateStats() {
             const todayStr = getFormattedDateString();
 
-            // 统计今天创建的待办事项总数
+            // 统计待办事项总数（不仅仅是今天）
+            const totalTodosCount = todos.length;
+
+            // 统计今日创建的任务（用于后续统计今日完成度，如果需要的话，或者保留以备后用）
             const todayTodos = todos.filter(t => {
                 if (!t.createdAt) return false;
                 return getFormattedDateString(new Date(t.createdAt)) === todayStr;
             });
-            const totalTodayTodos = todayTodos.length;
 
             // 统计今日完成的待办事项
             const completedToday = todayTodos.filter(t => {
@@ -1503,7 +1505,7 @@
             const completedTodosEl = document.getElementById('completedTodos');
             const todayPlansEl = document.getElementById('todayPlans');
 
-            if (totalTodosEl) totalTodosEl.textContent = totalTodayTodos;
+            if (totalTodosEl) totalTodosEl.textContent = totalTodosCount;
             if (completedTodosEl) completedTodosEl.textContent = totalCompletedToday;
             if (todayPlansEl) todayPlansEl.textContent = selectedDatePlans;
 
