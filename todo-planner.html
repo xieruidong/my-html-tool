@@ -921,6 +921,17 @@
 
                 <div class="input-group">
                     <div class="input-wrapper">
+                        <label>分类</label>
+                        <select id="planCategory">
+                            <option value="work">工作</option>
+                            <option value="study">学习</option>
+                            <option value="life" selected>生活</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-wrapper">
                         <textarea id="planContent" placeholder="输入计划内容..."></textarea>
                     </div>
                 </div>
@@ -980,7 +991,28 @@
             renderTodos();
             loadPlans();
             updateStats();
+            rolloverUncompletedPlans();
         });
+
+        // 自动将过去未完成的计划移至今日
+        function rolloverUncompletedPlans() {
+            const today = getFormattedDateString();
+            let movedCount = 0;
+
+            plans.forEach(plan => {
+                if (!plan.completed && plan.date < today) {
+                    plan.date = today;
+                    movedCount++;
+                }
+            });
+
+            if (movedCount > 0) {
+                savePlans();
+                loadPlans();
+                updateStats();
+                showToast(`已将 ${movedCount} 个未完成计划移至今日`, 'info');
+            }
+        }
 
         // 设置默认时间（当前时间+30分钟）
         function setDefaultTime() {
@@ -1142,9 +1174,11 @@
 
             const editContainer = document.querySelector(`.plan-edit-container[data-id="${id}"]`);
             const timeInput = editContainer.querySelector('.edit-plan-time');
+            const categoryInput = editContainer.querySelector('.edit-plan-category');
             const contentInput = editContainer.querySelector('.edit-plan-content');
 
             const newTime = timeInput.value;
+            const newCategory = categoryInput.value;
             const newContent = contentInput.value.trim();
 
             if (!newTime || !newContent) {
@@ -1153,6 +1187,7 @@
             }
 
             plan.time = newTime;
+            plan.category = newCategory;
             plan.content = newContent;
 
             savePlans();
@@ -1273,10 +1308,12 @@
         function addPlan() {
             const dateInput = document.getElementById('planDate');
             const timeInput = document.getElementById('planTime');
+            const categoryInput = document.getElementById('planCategory');
             const contentInput = document.getElementById('planContent');
 
             const date = dateInput.value;
             const time = timeInput.value;
+            const category = categoryInput.value;
             const content = contentInput.value.trim();
 
             if (!date || !time || !content) {
@@ -1291,6 +1328,7 @@
                 id: Date.now(),
                 date: date,
                 time: time,
+                category: category,
                 content: content,
                 completed: false,
                 createdAt: new Date().toISOString()
@@ -1357,9 +1395,14 @@
                         return `
                             <div class="plan-item" style="border-left-color: #667eea">
                                 <div class="plan-edit-container" data-id="${plan.id}" style="width: 100%">
-                                    <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                                    <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
                                         <input type="time" class="edit-plan-time" value="${plan.time}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
-                                        <input type="text" class="edit-plan-content" value="${escapeHtml(plan.content)}" style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <select class="edit-plan-category" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                                            <option value="work" ${plan.category === 'work' ? 'selected' : ''}>工作</option>
+                                            <option value="study" ${plan.category === 'study' ? 'selected' : ''}>学习</option>
+                                            <option value="life" ${plan.category === 'life' || !plan.category ? 'selected' : ''}>生活</option>
+                                        </select>
+                                        <input type="text" class="edit-plan-content" value="${escapeHtml(plan.content)}" style="flex: 1; min-width: 150px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
                                     </div>
                                     <div style="display: flex; justify-content: flex-end; gap: 6px;">
                                         <button class="btn btn-primary btn-small" onclick="saveEditPlan(${plan.id})">保存</button>
@@ -1370,6 +1413,8 @@
                         `;
                     }
 
+                    const categoryText = { work: '工作', study: '学习', life: '生活' }[plan.category || 'life'];
+
                     return `
                         <div class="plan-item ${isCompleted ? 'completed' : ''}">
                             <div class="plan-content-wrapper">
@@ -1379,8 +1424,12 @@
                                     <span class="plan-time-icon">⏰</span>
                                     <span>${plan.time}</span>
                                 </div>
-                                <div class="plan-content">${escapeHtml(plan.content)}</div>
+                                <span class="category-badge" style="margin-left: 4px;">${categoryText}</span>
+                                <div class="plan-content" style="margin-left: 8px;">${escapeHtml(plan.content)}</div>
                                 <div class="plan-actions">
+                                    <button class="btn btn-todo-to-plan btn-small" onclick="movePlanToTodo(${plan.id})" title="移动到待办事项">
+                                        <span>📋</span>
+                                    </button>
                                     <button class="btn btn-edit btn-small" onclick="startEditPlan(${plan.id})" title="编辑计划">
                                         <span>✏️</span>
                                     </button>
@@ -1618,10 +1667,40 @@
             // 填充到日计划输入框
             const today = getFormattedDateString();
             document.getElementById('planDate').value = today;
-            document.getElementById('planContent').value = `[${todo.category === 'work' ? '工作' : todo.category === 'study' ? '学习' : '生活'}] ${todo.title}`;
+            document.getElementById('planCategory').value = todo.category || 'life';
+            document.getElementById('planContent').value = todo.title;
             document.getElementById('planContent').focus();
 
             showToast('已填入今日计划，请选择时间并添加', 'info');
+        }
+
+        // 计划转待办
+        function movePlanToTodo(planId) {
+            const plan = plans.find(p => p.id === planId);
+            if (!plan) return;
+
+            confirmAction(`确定要将计划 "${plan.content}" 移动到待办事项吗？`, () => {
+                const todo = {
+                    id: Date.now(),
+                    title: plan.content,
+                    description: `来自计划: ${plan.date} ${plan.time}`,
+                    priority: 'medium',
+                    category: plan.category || 'life',
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+
+                todos.push(todo);
+                plans = plans.filter(p => p.id !== planId);
+
+                saveTodos();
+                savePlans();
+                renderTodos();
+                loadPlans();
+                updateStats();
+
+                showToast('已成功移动到待办事项', 'success');
+            });
         }
 
         // 支持回车键添加
