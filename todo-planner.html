@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>时光手账</title>
+    <!-- 引入高级字体 -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@700&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,8 +17,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             padding: 20px;
         }
@@ -27,13 +32,37 @@
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-family: 'Noto Serif SC', serif;
+            font-size: 3.5em;
+            margin-bottom: 12px;
+            background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 300;
         }
 
         .main-content {
@@ -841,17 +870,17 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>� 时光手账</h1>
-            <p>高效管理您的任务和时间</p>
+            <h1>🖋️ 时光手账</h1>
+            <p>High-End Life Planner</p>
             <div class="header-actions">
                 <button class="btn btn-outline btn-small" onclick="exportData()">
-                    <span>📤</span> 导出备份
+                    <span>📤</span> 备份
                 </button>
                 <button class="btn btn-outline btn-small" onclick="triggerImport()">
-                    <span>📥</span> 导入恢复
+                    <span>📥</span> 恢复
                 </button>
                 <button class="btn btn-danger btn-small" onclick="resetAllData()">
-                    <span>🗑️</span> 重置全部
+                    <span>🗑️</span> 重置
                 </button>
                 <input type="file" id="importFile" accept=".json" onchange="importData(this)">
             </div>
@@ -1588,7 +1617,7 @@
 
         // 清空所有数据
         function resetAllData() {
-            confirmAction('确定要清空所有的待办事项和日计划吗？此操作不可撤销！建议先导出备份。', () => {
+            confirmAction('确定要清空所有的待办事项和日计划吗？此操作不可撤销！建议先备份。', () => {
                 todos = [];
                 plans = [];
                 saveTodos();
