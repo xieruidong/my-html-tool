@@ -370,6 +370,39 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
             transition: all 0.3s;
             position: relative;
+            background: white;
+            /* 默认背景 */
+        }
+
+        /* 时间段视觉区分样式 */
+        .plan-item.period-morning {
+            border-left-color: #ffc107;
+            /* 晨曦黄 */
+            background-color: #fff9e6;
+        }
+
+        .plan-item.period-afternoon {
+            border-left-color: #fd7e14;
+            /* 活力橙 */
+            background-color: #fff5eb;
+        }
+
+        .plan-item.period-evening {
+            border-left-color: #6f42c1;
+            /* 深邃紫 */
+            background-color: #f8f4ff;
+        }
+
+        .plan-item.period-allday {
+            border-left-color: #007bff;
+            /* 稳重蓝 */
+            background-color: #f0f7ff;
+        }
+
+        .plan-item.completed {
+            opacity: 0.6;
+            background: #f8f9fa !important;
+            border-left-color: #adb5bd !important;
         }
 
         .plan-item:hover {
@@ -401,12 +434,14 @@
             gap: 4px;
             background: #667eea;
             color: white;
-            padding: 3px 8px;
+            padding: 4px 10px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 11px;
-            box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+            font-size: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             flex-shrink: 0;
+            min-width: 60px;
+            justify-content: center;
         }
 
         .plan-time-icon {
@@ -913,9 +948,14 @@
                 </div>
 
                 <div class="input-group">
-                    <div class="input-wrapper time-input-wrapper">
-                        <label>开始时间 (HH:mm)</label>
-                        <input type="time" id="planTime" placeholder="选择时间">
+                    <div class="input-wrapper">
+                        <label>时间段</label>
+                        <select id="planTime">
+                            <option value="morning">上午</option>
+                            <option value="afternoon">下午</option>
+                            <option value="evening">晚上</option>
+                            <option value="allday">全天</option>
+                        </select>
                     </div>
                 </div>
 
@@ -1014,13 +1054,16 @@
             }
         }
 
-        // 设置默认时间（当前时间+30分钟）
+        // 设置默认时间段（根据当前的小时自动选择）
         function setDefaultTime() {
             const now = new Date();
-            now.setMinutes(now.getMinutes() + 30);
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('planTime').value = `${hours}:${minutes}`;
+            const hour = now.getHours();
+            let period = 'morning';
+
+            if (hour >= 12 && hour < 18) period = 'afternoon';
+            else if (hour >= 18 || hour < 6) period = 'evening';
+
+            document.getElementById('planTime').value = period;
         }
 
         // 显示Toast提示
@@ -1377,9 +1420,15 @@
             const selectedDate = dateInput.value;
             const planList = document.getElementById('planList');
 
+            const timeWeight = { 'morning': 1, 'afternoon': 2, 'evening': 3, 'allday': 4 };
             const dayPlans = plans
                 .filter(plan => plan.date === selectedDate)
-                .sort((a, b) => a.time.localeCompare(b.time));
+                .sort((a, b) => {
+                    const weightA = timeWeight[a.time] || 1;
+                    const weightB = timeWeight[b.time] || 1;
+                    if (weightA !== weightB) return weightA - weightB;
+                    return (a.createdAt || '').localeCompare(b.createdAt || '');
+                });
 
             // 统一逻辑：如果没有计划，显示提示；如果有计划，显示列表
             if (dayPlans.length === 0) {
@@ -1396,7 +1445,12 @@
                             <div class="plan-item" style="border-left-color: #667eea">
                                 <div class="plan-edit-container" data-id="${plan.id}" style="width: 100%">
                                     <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
-                                        <input type="time" class="edit-plan-time" value="${plan.time}" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <select class="edit-plan-time" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
+                                            <option value="morning" ${plan.time === 'morning' ? 'selected' : ''}>上午</option>
+                                            <option value="afternoon" ${plan.time === 'afternoon' ? 'selected' : ''}>下午</option>
+                                            <option value="evening" ${plan.time === 'evening' ? 'selected' : ''}>晚上</option>
+                                            <option value="allday" ${plan.time === 'allday' ? 'selected' : ''}>全天</option>
+                                        </select>
                                         <select class="edit-plan-category" style="padding: 4px; border: 1px solid #ccc; border-radius: 4px;">
                                             <option value="work" ${plan.category === 'work' ? 'selected' : ''}>工作</option>
                                             <option value="study" ${plan.category === 'study' ? 'selected' : ''}>学习</option>
@@ -1413,16 +1467,19 @@
                         `;
                     }
 
+                    const periodTextMap = { morning: '上午', afternoon: '下午', evening: '晚上', allday: '全天' };
                     const categoryText = { work: '工作', study: '学习', life: '生活' }[plan.category || 'life'];
+                    const periodValue = plan.time || 'morning';
+                    const periodText = periodTextMap[periodValue] || periodValue;
 
                     return `
-                        <div class="plan-item ${isCompleted ? 'completed' : ''}">
+                        <div class="plan-item ${isCompleted ? 'completed' : ''} period-${periodValue}">
                             <div class="plan-content-wrapper">
                                 <input type="checkbox" class="plan-checkbox" ${isCompleted ? 'checked' : ''} 
                                        onchange="togglePlan(${plan.id})" title="标记为完成">
                                 <div class="plan-time">
                                     <span class="plan-time-icon">⏰</span>
-                                    <span>${plan.time}</span>
+                                    <span>${periodText}</span>
                                 </div>
                                 <span class="category-badge" style="margin-left: 4px;">${categoryText}</span>
                                 <div class="plan-content" style="margin-left: 8px;">${escapeHtml(plan.content)}</div>
