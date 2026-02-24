@@ -795,7 +795,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
+            z-index: 4000;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s;
@@ -864,6 +864,888 @@
         .btn-todo-to-plan:hover {
             background: #ff9f43;
         }
+
+        /* ===== 日志浮窗 ===== */
+        .journal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .journal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .journal-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -46%);
+            width: min(900px, 94vw);
+            height: 85vh;
+            background: #fdf8f0;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(139, 69, 19, 0.12);
+            border-radius: 16px;
+            z-index: 3001;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+        }
+
+        .journal-overlay.active .journal-panel {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 弹窗内部两栏布局 */
+        .journal-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 左侧：输入区 - 设为 flex: 1 以便在右栏收起时自动填满 */
+        .journal-write-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #e8d9c4;
+            background-color: #fdf8f0;
+            background-image:
+                repeating-linear-gradient(to bottom,
+                    transparent,
+                    transparent 31px,
+                    #e8d9c4 31px,
+                    #e8d9c4 32px);
+            background-attachment: local;
+            background-position: 0 15px;
+            position: relative;
+        }
+
+        /* 右侧：历史记录 - 使用固定初始宽度 */
+        .journal-history-col {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(244, 237, 224, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: relative;
+            border-left: 1px solid rgba(232, 217, 196, 0.4);
+            overflow: hidden;
+            opacity: 1;
+        }
+
+        /* 收起状态 */
+        .journal-history-col.collapsed {
+            flex: 0 0 0;
+            width: 0;
+            opacity: 0;
+            border-left: none;
+        }
+
+        /* 始终可见的切换按钮 (即便历史栏收起) - 旧类名清理 */
+        /* .journal-history-toggle { ... } -> 已废弃 */
+
+        /* 浮动切换按钮 - 将其移至右侧边缘中部，避免与关闭按钮冲突 */
+        .journal-history-toggle-float {
+            position: absolute;
+            top: 50%;
+            right: -14px;
+            /* 默认压在边线上 */
+            transform: translateY(-50%);
+            width: 28px;
+            height: 48px;
+            background: rgba(244, 237, 224, 0.9);
+            border: 1px solid rgba(139, 69, 19, 0.3);
+            border-radius: 24px 0 0 24px;
+            /* 半圆拱形 */
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 4px;
+            cursor: pointer;
+            color: #8B4513;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .journal-history-toggle-float:hover {
+            background: #fff;
+            padding-left: 8px;
+            width: 32px;
+            border-color: #8B4513;
+        }
+
+        .journal-history-toggle-float.on-collapsed {
+            right: 0px;
+            border-radius: 24px 0 0 24px;
+            background: rgba(139, 69, 19, 0.1);
+        }
+
+        /* Emoji 快捷栏 */
+        .journal-emoji-bar {
+            display: flex;
+            gap: 6px;
+            padding: 8px 20px 4px 48px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .journal-emoji-btn {
+            background: none;
+            border: 1px solid #e8d9c4;
+            border-radius: 8px;
+            padding: 3px 7px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            line-height: 1.4;
+        }
+
+        .journal-emoji-btn:hover {
+            background: rgba(198, 134, 66, 0.15);
+            border-color: #c68642;
+            transform: scale(1.15);
+        }
+
+        /* 左侧空时引导句 */
+        .journal-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #c4a882;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 15px;
+            line-height: 2;
+            pointer-events: none;
+            user-select: none;
+            width: 80%;
+            opacity: 0.8;
+        }
+
+        .journal-history-title {
+            padding: 12px 16px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #8B4513;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(232, 217, 196, 0.4);
+            font-family: 'Noto Serif SC', serif;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 搜索框 */
+        .journal-search-container {
+            padding: 8px 16px;
+            background: rgba(255, 252, 248, 0.4);
+            border-bottom: 1px solid rgba(232, 217, 196, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .journal-search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 12px;
+            color: #3d2b1f;
+            font-family: 'Inter', sans-serif;
+            padding: 4px 0;
+        }
+
+        .journal-search-input::placeholder {
+            color: #c4a882;
+            opacity: 0.7;
+        }
+
+        .journal-search-icon {
+            color: #c4a882;
+            width: 14px;
+            height: 14px;
+        }
+
+        .journal-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            background: linear-gradient(135deg, #8B4513 0%, #c68642 100%);
+            color: white;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.1em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 10px rgba(139, 69, 19, 0.3);
+        }
+
+        .journal-close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .journal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .journal-input-area {
+            padding: 16px 20px 12px 48px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            /* 背景透明，让父层横线纹理显示 */
+            background: transparent;
+            /* 红线装饰 */
+            border-left: 4px solid #e06c6c;
+            position: relative;
+        }
+
+        .journal-input-area::before {
+            content: '';
+            position: absolute;
+            left: 36px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #e8d9c4;
+        }
+
+        .journal-textarea {
+            width: 100%;
+            flex: 1;
+            border: none;
+            background: transparent;
+            resize: none;
+            font-size: 14px;
+            line-height: 32px;
+            color: #3d2b1f;
+            outline: none;
+            font-family: 'Noto Serif SC', 'KaiTi', 'STKaiti', serif;
+            min-height: 0;
+        }
+
+        .journal-input-area::placeholder {
+            color: #c4a882;
+        }
+
+        .journal-save-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .journal-date-hint {
+            font-size: 12px;
+            color: #a08060;
+        }
+
+        .btn-journal-save {
+            background: linear-gradient(135deg, #8B4513, #c68642);
+            color: white;
+            border: none;
+            padding: 7px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-journal-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.35);
+        }
+
+        .journal-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 0;
+        }
+
+        .journal-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .journal-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .journal-list::-webkit-scrollbar-thumb {
+            background: #c4a882;
+            border-radius: 3px;
+        }
+
+        /* 年份分组 */
+        .journal-year-group>summary {
+            padding: 6px 20px;
+            font-weight: 700;
+            font-size: 13px;
+            color: #8B4513;
+            cursor: pointer;
+            letter-spacing: 1px;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+
+        .journal-year-group>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .journal-year-group>summary::before {
+            content: '▶';
+            font-size: 10px;
+            transition: transform 0.2s;
+            color: #c68642;
+        }
+
+        .journal-year-group[open]>summary::before {
+            transform: rotate(90deg);
+        }
+
+        /* 月份分组 */
+        .journal-month-group {
+            margin: 4px 0;
+        }
+
+        .journal-month-group>summary {
+            padding: 5px 20px 5px 32px;
+            font-size: 12px;
+            color: #a06030;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            user-select: none;
+        }
+
+        .journal-month-group>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .journal-month-group>summary::before {
+            content: '▶';
+            font-size: 9px;
+            transition: transform 0.2s;
+            color: #c68642;
+        }
+
+        .journal-month-group[open]>summary::before {
+            transform: rotate(90deg);
+        }
+
+        /* 日期分组 */
+        .journal-day-group {
+            margin: 2px 0;
+        }
+
+        .journal-day-group>summary {
+            padding: 5px 20px 5px 44px;
+            font-size: 12px;
+            color: #805030;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            user-select: none;
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        .journal-day-group>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .journal-day-group>summary::before {
+            content: '▶';
+            font-size: 9px;
+            transition: transform 0.2s;
+            color: #c68642;
+        }
+
+        .journal-day-group[open]>summary::before {
+            transform: rotate(90deg);
+        }
+
+        /* 单条日志 - 左侧时间轴线条 */
+        .journal-entry {
+            padding: 8px 20px 8px 20px;
+            position: relative;
+            border-bottom: 1px solid rgba(232, 217, 196, 0.5);
+            background: transparent;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        /* 时间轴垂线 */
+        .journal-entry::before {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #c68642, #e8d9c4);
+            opacity: 0.5;
+        }
+
+        /* 时间点 */
+        .journal-entry-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #c68642;
+            border: 2px solid #fdf8f0;
+            box-shadow: 0 0 0 1px #c68642;
+            flex-shrink: 0;
+            margin-top: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .journal-entry:hover {
+            background: rgba(240, 225, 200, 0.6);
+        }
+
+        .journal-entry-time {
+            font-size: 11px;
+            color: #a08060;
+            margin-bottom: 4px;
+        }
+
+        .journal-entry-content {
+            font-size: 13px;
+            color: #3d2b1f;
+            line-height: 1.6;
+            word-break: break-word;
+            white-space: pre-wrap;
+            font-family: 'Noto Serif SC', 'KaiTi', 'STKaiti', serif;
+        }
+
+        .journal-entry-delete {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #d4a870;
+            cursor: pointer;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 2px 5px;
+        }
+
+        .journal-entry:hover .journal-entry-delete {
+            opacity: 1;
+        }
+
+        .journal-entry-delete:hover {
+            color: #e05050;
+        }
+
+        .journal-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #c4a882;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 14px;
+            line-height: 2;
+        }
+
+        /* ===== 时间轴 Timeline ===== */
+        .journal-timeline {
+            padding: 16px 0;
+            /* 贯穿底部的垂线 */
+            position: relative;
+        }
+
+        .journal-timeline::before {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, rgba(198, 134, 66, 0.5), rgba(198, 134, 66, 0.1));
+        }
+
+        /* 日期卡片 */
+        .journal-tl-day {
+            margin: 0 12px 16px 12px;
+            position: relative;
+        }
+
+        /* 日期头部：圆点 + 标题 */
+        .journal-tl-day-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            padding-left: 4px;
+        }
+
+        .journal-tl-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #d4a870;
+            border: 2px solid rgba(244, 237, 224, 0.85);
+            box-shadow: 0 0 0 1.5px #c68642;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .journal-tl-dot.today {
+            background: #8B4513;
+            box-shadow: 0 0 0 2px #c68642, 0 0 8px rgba(139, 69, 19, 0.4);
+        }
+
+        .journal-tl-date {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a06030;
+            font-family: 'Noto Serif SC', serif;
+            letter-spacing: 0.5px;
+        }
+
+        .journal-tl-date.today {
+            color: #8B4513;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .journal-tl-count {
+            font-size: 11px;
+            color: #c4a882;
+            margin-left: auto;
+            background: rgba(196, 168, 130, 0.15);
+            padding: 1px 7px;
+            border-radius: 10px;
+        }
+
+        /* 内容卡片区域 */
+        .journal-tl-entries {
+            background: rgba(255, 252, 248, 0.75);
+            border-radius: 10px;
+            border: 1px solid rgba(232, 217, 196, 0.6);
+            margin-left: 16px;
+            overflow: hidden;
+        }
+
+        /* 单条日志 */
+        .journal-tl-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(232, 217, 196, 0.4);
+            position: relative;
+            transition: background 0.15s;
+        }
+
+        .journal-tl-entry:last-child {
+            border-bottom: none;
+        }
+
+        .journal-tl-entry:hover {
+            background: rgba(198, 134, 66, 0.07);
+        }
+
+        .journal-tl-content {
+            flex: 1;
+            font-size: 13px;
+            color: #3d2b1f;
+            line-height: 1.65;
+            word-break: break-word;
+            white-space: pre-wrap;
+            font-family: 'Noto Serif SC', 'KaiTi', serif;
+        }
+
+        .journal-tl-time {
+            font-size: 11px;
+            color: #c4a882;
+            flex-shrink: 0;
+            margin-top: 2px;
+            letter-spacing: 0.5px;
+            margin-right: 24px;
+            /* 为删除按钮留空间 */
+        }
+
+        /* 删除按钮常驻且优化 */
+        .journal-entry-delete {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #d4a870;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.4;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .journal-entry-delete:hover {
+            opacity: 1;
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 4px;
+        }
+
+        /* 年份分隔线 */
+        .journal-tl-year-sep {
+            text-align: center;
+            font-size: 11px;
+            color: #c4a882;
+            letter-spacing: 2px;
+            margin: 8px 16px 16px;
+            position: relative;
+        }
+
+        .journal-tl-year-sep::before,
+        .journal-tl-year-sep::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 30%;
+            height: 1px;
+            background: rgba(196, 168, 130, 0.4);
+        }
+
+        .journal-tl-year-sep::before {
+            left: 0;
+        }
+
+        .journal-tl-year-sep::after {
+            right: 0;
+        }
+
+        /* 触发按钮 */
+        .btn-journal {
+            background: linear-gradient(135deg, #8B4513, #c68642);
+            color: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+        }
+
+        .btn-journal:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.45);
+            background: linear-gradient(135deg, #7a3b10, #b57535);
+        }
+
+        @media (max-width: 640px) {
+            .journal-panel {
+                width: 98vw;
+                height: 90vh;
+            }
+
+            .journal-body {
+                flex-direction: column;
+            }
+
+            .journal-write-col {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid #e8d9c4;
+            }
+        }
+
+        /* ===== 右上角树状日志导航 ===== */
+        .journal-tree-widget {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 220px;
+            background: rgba(253, 248, 240, 0.97);
+            border: 1px solid #e8d9c4;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(139, 69, 19, 0.15);
+            z-index: 900;
+            font-size: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            max-height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .journal-tree-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #8B4513, #c68642);
+            color: white;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .journal-tree-toggle {
+            font-size: 10px;
+            opacity: 0.8;
+            transition: transform 0.2s;
+        }
+
+        .journal-tree-widget.collapsed .journal-tree-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .journal-tree-body {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .journal-tree-widget.collapsed .journal-tree-body {
+            display: none;
+        }
+
+        .journal-tree-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .journal-tree-body::-webkit-scrollbar-thumb {
+            background: #c4a882;
+            border-radius: 2px;
+        }
+
+        .jtree-year>summary {
+            padding: 6px 12px;
+            font-weight: 700;
+            color: #8B4513;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+        }
+
+        .jtree-year>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .jtree-year>summary::before {
+            content: '▶';
+            font-size: 8px;
+            transition: transform 0.15s;
+            color: #c68642;
+        }
+
+        .jtree-year[open]>summary::before {
+            transform: rotate(90deg);
+        }
+
+        .jtree-month>summary {
+            padding: 4px 12px 4px 22px;
+            color: #a06030;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+        }
+
+        .jtree-month>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .jtree-month>summary::before {
+            content: '▶';
+            font-size: 7px;
+            transition: transform 0.15s;
+            color: #c68642;
+        }
+
+        .jtree-month[open]>summary::before {
+            transform: rotate(90deg);
+        }
+
+        .jtree-day {
+            padding: 3px 12px 3px 32px;
+            color: #805030;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 1px 6px;
+            transition: background 0.15s;
+        }
+
+        .jtree-day:hover {
+            background: rgba(198, 134, 66, 0.15);
+        }
+
+        .jtree-day.today {
+            color: #8B4513;
+            font-weight: 700;
+        }
+
+        .journal-tl-entries {
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .journal-tree-empty {
+            padding: 16px 12px;
+            color: #c4a882;
+            text-align: center;
+            font-family: 'Noto Serif SC', serif;
+            line-height: 1.8;
+        }
     </style>
 </head>
 
@@ -881,6 +1763,9 @@
                 </button>
                 <button class="btn btn-danger btn-small" onclick="resetAllData()">
                     <span>🗑️</span> 重置
+                </button>
+                <button class="btn btn-journal btn-small" onclick="openJournal()">
+                    <span>📔</span> 日志
                 </button>
                 <input type="file" id="importFile" accept=".json" onchange="importData(this)">
             </div>
@@ -1032,10 +1917,80 @@
         </div>
     </div>
 
+    <!-- 日志浮窗（居中大弹窗） -->
+    <div class="journal-overlay" id="journalOverlay" onclick="handleJournalOverlayClick(event)">
+        <div class="journal-panel" id="journalPanel">
+            <div class="journal-panel-header">
+                <span>📔 我的日志</span>
+                <button class="journal-close-btn" onclick="closeJournal()" title="关闭">✕</button>
+            </div>
+            <div class="journal-body">
+                <!-- 左侧：输入区 -->
+                <div class="journal-write-col">
+                    <div class="journal-history-toggle-float" onclick="toggleHistoryCol()" id="historyToggleBtn"
+                        title="展开/收起历史">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </div>
+                    <div class="journal-input-area"
+                        style="flex:1;display:flex;flex-direction:column;position:relative;">
+                        <div class="journal-prompt" id="journalPrompt"></div>
+                        <textarea class="journal-textarea" id="journalInput" placeholder="记录此刻的心情与想法..."
+                            style="flex:1;max-height:none;" oninput="updateJournalPrompt()"></textarea>
+                    </div>
+                    <!-- Emoji 快捷栏 -->
+                    <div class="journal-emoji-bar" id="journalEmojiBar">
+                        <button class="journal-emoji-btn" onclick="insertEmoji('😊')" title="开心">😊</button>
+                        <button class="journal-emoji-btn" onclick="insertEmoji('😢')" title="难过">😢</button>
+                        <button class="journal-emoji-btn" onclick="insertEmoji('😤')" title="生气">😤</button>
+                        <button class="journal-emoji-btn" onclick="insertEmoji('🥳')" title="庆祝">🥳</button>
+                        <button class="journal-emoji-btn" onclick="insertEmoji('😴')" title="疲惫">😴</button>
+                        <button class="journal-emoji-btn" onclick="insertEmoji('💡')" title="灵感">💡</button>
+                        <button class="journal-emoji-btn" onclick="insertEmoji('❤️')" title="感恩">❤️</button>
+                        <button class="journal-emoji-btn" onclick="insertEmoji('⭐')" title="重要">⭐</button>
+                        <div style="flex:1"></div>
+                        <span class="journal-date-hint" id="journalDateHint"></span>
+                        <button class="btn-journal-save" onclick="saveJournal()">💾 保存 <small
+                                style="opacity:.7;font-size:10px;">Ctrl+↵</small></button>
+                    </div>
+                </div>
+                <!-- 右侧：历史记录 -->
+                <div class="journal-history-col" id="journalHistoryCol">
+                    <div class="journal-history-title">
+                        <span>📜 历史记录</span>
+                    </div>
+                    <!-- 搜索栏 -->
+                    <div class="journal-search-container">
+                        <svg class="journal-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" class="journal-search-input" id="journalSearchInput"
+                            placeholder="在此搜索历史日志..." oninput="handleJournalSearch()">
+                    </div>
+                    <div class="journal-list" id="journalList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右上角树状日志导航 (时光回廊) -->
+    <div class="journal-tree-widget" id="journalTreeWidget">
+        <div class="journal-tree-header" onclick="toggleJournalTree()">
+            <span>🏛️ 时光回廊</span>
+            <span class="journal-tree-toggle" id="journalTreeToggle">▼</span>
+        </div>
+        <div class="journal-tree-body" id="journalTreeBody"></div>
+    </div>
+
     <script>
         // 数据存储
         let todos = JSON.parse(localStorage.getItem('todos')) || [];
         let plans = JSON.parse(localStorage.getItem('plans')) || [];
+        let journals = JSON.parse(localStorage.getItem('journals')) || [];
         let currentCategoryFilter = 'all';
         let editingTodoId = null;
         let editingPlanId = null;
@@ -1064,6 +2019,7 @@
             loadPlans();
             updateStats();
             rolloverUncompletedPlans();
+            updateJournalDateHint();
         });
 
         // 自动将过去未完成的计划移至今日
@@ -1697,13 +2653,330 @@
             if (e.target === this) closeModal();
         });
 
-        // 导出数据
+        // ===== 日志功能 =====
+
+        function openJournal() {
+            document.getElementById('journalOverlay').classList.add('active');
+            updateJournalDateHint();
+            // 清空搜索框
+            const searchInput = document.getElementById('journalSearchInput');
+            if (searchInput) searchInput.value = '';
+            renderJournals();
+            // 聚焦输入框
+            setTimeout(() => document.getElementById('journalInput').focus(), 350);
+        }
+
+        function closeJournal() {
+            document.getElementById('journalOverlay').classList.remove('active');
+        }
+
+        function handleJournalOverlayClick(e) {
+            if (e.target === document.getElementById('journalOverlay')) closeJournal();
+        }
+
+        function updateJournalDateHint() {
+            const now = new Date();
+            const hint = now.toLocaleString('zh-CN', {
+                month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const el = document.getElementById('journalDateHint');
+            if (el) el.textContent = hint;
+        }
+
+        function saveJournal() {
+            const input = document.getElementById('journalInput');
+            const content = input.value.trim();
+            if (!content) {
+                input.focus();
+                return;
+            }
+
+            const entry = {
+                id: Date.now(),
+                content: content,
+                createdAt: new Date().toISOString()
+            };
+
+            journals.unshift(entry); // 最新在前
+            saveJournals();
+            input.value = '';
+            input.focus();
+            renderJournals();
+            renderJournalTree();
+            showToast('日志已保存 ✍️', 'success');
+        }
+
+        function deleteJournal(id) {
+            confirmAction('确定要删除这条日志吗？', () => {
+                journals = journals.filter(j => j.id !== id);
+                saveJournals();
+                renderJournals();
+                renderJournalTree();
+            });
+        }
+
+        function saveJournals() {
+            try {
+                localStorage.setItem('journals', JSON.stringify(journals));
+            } catch (e) {
+                showToast('存储空间不足，请导出备份后清理旧数据', 'info');
+            }
+        }
+
+        function handleJournalSearch() {
+            const val = document.getElementById('journalSearchInput').value.toLowerCase().trim();
+            renderJournals(val);
+        }
+
+        function renderJournals(searchTerm = '') {
+            const listEl = document.getElementById('journalList');
+            if (!listEl) return;
+
+            let filteredJournals = journals;
+            if (searchTerm) {
+                filteredJournals = journals.filter(j => j.content.toLowerCase().includes(searchTerm));
+            }
+
+            if (filteredJournals.length === 0) {
+                listEl.innerHTML = searchTerm
+                    ? `<div class="journal-empty">未找到包含 "${searchTerm}" 的日志 🔍</div>`
+                    : '<div class="journal-empty">还没有日志记录<br>写下今天的第一篇吧 ✨</div>';
+                return;
+            }
+
+            const todayStr = getFormattedDateString();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+            // 按天分组
+            const grouped = {};
+            filteredJournals.forEach(entry => {
+                const d = new Date(entry.createdAt);
+                const year = d.getFullYear();
+                const month = d.getMonth() + 1;
+                const day = d.getDate();
+                const dayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (!grouped[dayStr]) grouped[dayStr] = { year, month, day, entries: [] };
+                grouped[dayStr].entries.push(entry);
+            });
+
+            const sortedDays = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+            let html = '<div class="journal-timeline">';
+            let lastYear = null;
+
+            // Emoji 提取正则
+            const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
+
+            sortedDays.forEach(dayStr => {
+                const { year, month, day, entries } = grouped[dayStr];
+
+                if (lastYear !== null && lastYear !== year) {
+                    html += `<div class="journal-tl-year-sep">${lastYear} 年</div>`;
+                }
+                lastYear = year;
+
+                let dayLabel;
+                if (dayStr === todayStr) dayLabel = `今天 · ${month}月${day}日`;
+                else if (dayStr === yesterdayStr) dayLabel = `昨天 · ${month}月${day}日`;
+                else dayLabel = `${month}月${day}日`;
+
+                const isToday = dayStr === todayStr;
+                html += `<div class="journal-tl-day" data-daystr="${dayStr}">`;
+                html += `<div class="journal-tl-day-header">
+                    <div class="journal-tl-dot ${isToday ? 'today' : ''}"></div>
+                    <span class="journal-tl-date ${isToday ? 'today' : ''}">${dayLabel}</span>
+                    <span class="journal-tl-count">${entries.length}条</span>
+                </div>`;
+                html += `<div class="journal-tl-entries">`;
+                entries.forEach(entry => {
+                    const t = new Date(entry.createdAt);
+                    const timeStr = t.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+                    // 尝试提取开头的 Emoji
+                    let customIcon = '';
+                    const match = entry.content.match(emojiRegex);
+                    if (match && entry.content.indexOf(match[0]) < 5) { // 仅限前5个字符内
+                        customIcon = `<span style="font-size:16px;margin-right:8px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1))">${match[0]}</span>`;
+                    }
+
+                    html += `<div class="journal-tl-entry">
+                        <div class="journal-tl-content">${customIcon}${escapeHtml(entry.content)}</div>
+                        <div class="journal-tl-time">${timeStr}</div>
+                        <button class="journal-entry-delete" onclick="deleteJournal(${entry.id})" title="删除">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            });
+
+            html += '</div>';
+            listEl.innerHTML = html;
+        }
+
+        // ===== 右上角树状日志导航 =====
+
+        function renderJournalTree() {
+            const treeBody = document.getElementById('journalTreeBody');
+            if (!treeBody) return;
+
+            if (journals.length === 0) {
+                treeBody.innerHTML = '<div class="journal-tree-empty">暂无日志<br>📝 开始记录吧</div>';
+                return;
+            }
+
+            const todayStr = getFormattedDateString();
+            const now = new Date();
+            const yearNow = now.getFullYear();
+            const monthNow = now.getMonth() + 1;
+
+            // 按年→月→日分组（只需 count）
+            const grouped = {};
+            journals.forEach(entry => {
+                const d = new Date(entry.createdAt);
+                const year = d.getFullYear();
+                const month = d.getMonth() + 1;
+                const day = d.getDate();
+                const dayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                if (!grouped[year]) grouped[year] = {};
+                if (!grouped[year][month]) grouped[year][month] = {};
+                if (!grouped[year][month][day]) grouped[year][month][day] = { dayStr, count: 0 };
+                grouped[year][month][day].count++;
+            });
+
+            const years = Object.keys(grouped).sort((a, b) => b - a);
+            let html = '';
+
+            years.forEach(year => {
+                const months = Object.keys(grouped[year]).sort((a, b) => b - a);
+                const yearOpen = parseInt(year) === yearNow ? 'open' : '';
+                html += `<details class="jtree-year" ${yearOpen}><summary>📅 ${year}年</summary>`;
+
+                months.forEach(month => {
+                    const days = Object.keys(grouped[year][month]).sort((a, b) => b - a);
+                    const monthOpen = parseInt(year) === yearNow && parseInt(month) === monthNow ? 'open' : '';
+                    const totalInMonth = days.reduce((s, d) => s + grouped[year][month][d].count, 0);
+                    html += `<details class="jtree-month" ${monthOpen}><summary>📖 ${month}月 <span style="color:#c4a882;margin-left:4px">${totalInMonth}条</span></summary>`;
+
+                    days.forEach(day => {
+                        const { dayStr, count } = grouped[year][month][day];
+                        const isToday = dayStr === todayStr;
+                        const dayLabel = isToday ? `${day}日 · 今天` : `${day}日`;
+                        html += `<div class="jtree-day ${isToday ? 'today' : ''}" onclick="openJournalToDate('${dayStr}')" title="跳转到${dayStr}">🗒 ${dayLabel} <span style="color:#c4a882">(${count})</span></div>`;
+                    });
+
+                    html += '</details>';
+                });
+
+                html += '</details>';
+            });
+
+            treeBody.innerHTML = html;
+        }
+
+        // 点击树状节点，打开弹窗并定位到对应日期
+        function openJournalToDate(targetDate) {
+            openJournal();
+            setTimeout(() => {
+                const listEl = document.getElementById('journalList');
+                if (!listEl) return;
+                const dayEls = listEl.querySelectorAll('.journal-tl-day[data-daystr]');
+                dayEls.forEach(el => {
+                    if (el.dataset.daystr === targetDate) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            }, 400);
+        }
+
+        function toggleJournalTree() {
+            const widget = document.getElementById('journalTreeWidget');
+            widget.classList.toggle('collapsed');
+        }
+
+        // ===== 分隔符成语引导句 =====
+        const JOURNAL_PROMPTS = [
+            '今天有什么值得纪念的小事？',
+            '此刻心情怎么样？就从这里开始。',
+            '今天让你微笑的一件事是什么？',
+            '有什么想法尚未完成？',
+            '写下今天一个小小的蒸笼吧。',
+            '今天学到了什么？',
+            '快记下这一刻的生活熏。'
+        ];
+
+        function updateJournalPrompt() {
+            const prompt = document.getElementById('journalPrompt');
+            const input = document.getElementById('journalInput');
+            if (!prompt) return;
+            prompt.style.display = input && input.value.trim() ? 'none' : 'block';
+        }
+
+        function insertEmoji(emoji) {
+            const ta = document.getElementById('journalInput');
+            if (!ta) return;
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            ta.value = ta.value.slice(0, start) + emoji + ta.value.slice(end);
+            const pos = start + emoji.length;
+            ta.setSelectionRange(pos, pos);
+            ta.focus();
+            updateJournalPrompt();
+        }
+
+        function toggleHistoryCol() {
+            const col = document.getElementById('journalHistoryCol');
+            const btn = document.getElementById('historyToggleBtn');
+            if (!col || !btn) return;
+
+            const isCollapsed = col.classList.toggle('collapsed');
+
+            // 同步按钮的样式类，实现收起后的位移
+            btn.classList.toggle('on-collapsed', isCollapsed);
+
+            // 更新按钮图标方向 (SVG polyline points 切换)
+            if (isCollapsed) {
+                // 收起状态 -> 显示“展开”箭头 (>)
+                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+                btn.title = "展开历史";
+            } else {
+                // 展开状态 -> 显示“收起”箭头 (<)
+                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
+                btn.title = "收起历史";
+            }
+        }
+
+        // 支持 Ctrl+Enter 保存日志 + 初始化树状导航
+        document.addEventListener('DOMContentLoaded', function () {
+            const journalInput = document.getElementById('journalInput');
+            if (journalInput) {
+                journalInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                        saveJournal();
+                    }
+                });
+            }
+            // 初始化引导句
+            const prompt = document.getElementById('journalPrompt');
+            if (prompt) {
+                const idx = Math.floor(Math.random() * JOURNAL_PROMPTS.length);
+                prompt.innerHTML = '✨ ' + JOURNAL_PROMPTS[idx];
+                prompt.style.display = 'block';
+            }
+            // 初始渲染右上角树状导航
+            renderJournalTree();
+        });
+
+        // ===== 导出数据 =====
         function exportData() {
             const data = {
                 version: 1,
                 exportedAt: new Date().toISOString(),
                 todos: todos,
-                plans: plans
+                plans: plans,
+                journals: journals
             };
 
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1747,11 +3020,16 @@
                     `, () => {
                         if (data.todos) todos = data.todos;
                         if (data.plans) plans = data.plans;
+                        if (data.journals) journals = data.journals;
                         saveTodos();
                         savePlans();
+                        saveJournals();
                         renderTodos();
                         loadPlans();
                         updateStats();
+                        if (document.getElementById('journalOverlay').classList.contains('active')) {
+                            renderJournals();
+                        }
                         showToast('数据恢复成功！', 'success');
                     });
                 } catch (err) {
