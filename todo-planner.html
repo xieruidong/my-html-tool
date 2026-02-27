@@ -1504,6 +1504,55 @@
             font-family: 'Noto Serif SC', 'KaiTi', serif;
         }
 
+        /* 展开/收起按钮 */
+        .journal-expand-btn {
+            display: inline;
+            background: none;
+            border: none;
+            color: #c68642;
+            cursor: pointer;
+            font-size: 11px;
+            padding: 0 3px;
+            font-family: inherit;
+            text-decoration: underline;
+            opacity: 0.75;
+            white-space: nowrap;
+        }
+
+        .journal-expand-btn:hover {
+            opacity: 1;
+            color: #8B4513;
+        }
+
+        /* 折叠的日期内容区 */
+        .journal-tl-entries.collapsed {
+            display: none;
+        }
+
+        /* 日期头部可点击 */
+        .journal-tl-day-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .journal-tl-day-toggle:hover .journal-tl-date {
+            color: #8B4513;
+        }
+
+        /* 折叠箭头 */
+        .journal-tl-arrow {
+            font-size: 13px;
+            color: #c4a882;
+            margin-left: 4px;
+            display: inline-block;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .journal-tl-arrow.collapsed {
+            transform: rotate(-90deg);
+        }
+
         .journal-tl-time {
             font-size: 11px;
             color: #c4a882;
@@ -2783,13 +2832,17 @@
                 else dayLabel = `${month}月${day}日`;
 
                 const isToday = dayStr === todayStr;
+                const isCollapsed = !isToday && !searchTerm; // 搜索时全部展开
                 html += `<div class="journal-tl-day" data-daystr="${dayStr}">`;
-                html += `<div class="journal-tl-day-header">
+                html += `<div class="journal-tl-day-header journal-tl-day-toggle" onclick="toggleJournalDay(this)">
                     <div class="journal-tl-dot ${isToday ? 'today' : ''}"></div>
                     <span class="journal-tl-date ${isToday ? 'today' : ''}">${dayLabel}</span>
                     <span class="journal-tl-count">${entries.length}条</span>
+                    <span class="journal-tl-arrow ${isCollapsed ? 'collapsed' : ''}">▾</span>
                 </div>`;
-                html += `<div class="journal-tl-entries">`;
+                html += `<div class="journal-tl-entries ${isCollapsed ? 'collapsed' : ''}">`;
+
+                const PREVIEW_LEN = 75;
                 entries.forEach(entry => {
                     const t = new Date(entry.createdAt);
                     const timeStr = t.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
@@ -2801,8 +2854,18 @@
                         customIcon = `<span style="font-size:16px;margin-right:8px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1))">${match[0]}</span>`;
                     }
 
+                    const needsTruncate = entry.content.length > PREVIEW_LEN;
+                    let contentHtml;
+                    if (needsTruncate) {
+                        const preview = escapeHtml(entry.content.slice(0, PREVIEW_LEN));
+                        const full = escapeHtml(entry.content);
+                        contentHtml = `<span class="jc-preview">${preview}···</span><span class="jc-full" style="display:none">${full}</span><button class="journal-expand-btn" onclick="toggleJournalContent(${entry.id})">展开</button>`;
+                    } else {
+                        contentHtml = escapeHtml(entry.content);
+                    }
+
                     html += `<div class="journal-tl-entry">
-                        <div class="journal-tl-content">${customIcon}${escapeHtml(entry.content)}</div>
+                        <div class="journal-tl-content" id="jcontent-${entry.id}">${customIcon}${contentHtml}</div>
                         <div class="journal-tl-time">${timeStr}</div>
                         <button class="journal-entry-delete" onclick="deleteJournal(${entry.id})" title="删除">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -2814,6 +2877,27 @@
 
             html += '</div>';
             listEl.innerHTML = html;
+        }
+
+        // 切换单条日志内容展开/收起
+        function toggleJournalContent(id) {
+            const container = document.getElementById('jcontent-' + id);
+            if (!container) return;
+            const preview = container.querySelector('.jc-preview');
+            const full = container.querySelector('.jc-full');
+            const btn = container.querySelector('.journal-expand-btn');
+            const isExpanded = full.style.display !== 'none';
+            preview.style.display = isExpanded ? '' : 'none';
+            full.style.display = isExpanded ? 'none' : '';
+            btn.textContent = isExpanded ? '展开' : '收起';
+        }
+
+        // 切换日期分组折叠/展开
+        function toggleJournalDay(headerEl) {
+            const entriesEl = headerEl.nextElementSibling;
+            const arrow = headerEl.querySelector('.journal-tl-arrow');
+            const isNowCollapsed = entriesEl.classList.toggle('collapsed');
+            arrow.classList.toggle('collapsed', isNowCollapsed);
         }
 
         // ===== 右上角树状日志导航 =====
