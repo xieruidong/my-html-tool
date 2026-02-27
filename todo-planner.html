@@ -1647,6 +1647,15 @@
             }
         }
 
+        /* 小屏：时光回廊默认收起，尺寸收窄 */
+        @media (max-width: 768px) {
+            .journal-tree-widget {
+                width: 160px;
+                top: 60px;
+                right: 10px;
+            }
+        }
+
         /* ===== 右上角树状日志导航 ===== */
         .journal-tree-widget {
             position: fixed;
@@ -2940,7 +2949,7 @@
 
                 months.forEach(month => {
                     const days = Object.keys(grouped[year][month]).sort((a, b) => b - a);
-                    const monthOpen = parseInt(year) === yearNow && parseInt(month) === monthNow ? 'open' : '';
+                    const monthOpen = ''; // 月份默认不展开，点击才展开
                     const totalInMonth = days.reduce((s, d) => s + grouped[year][month][d].count, 0);
                     html += `<details class="jtree-month" ${monthOpen}><summary>📖 ${month}月 <span style="color:#c4a882;margin-left:4px">${totalInMonth}条</span></summary>`;
 
@@ -3051,6 +3060,11 @@
             }
             // 初始渲染右上角树状导航
             renderJournalTree();
+            // 小屏默认折叠时光回廊
+            if (window.innerWidth <= 768) {
+                const widget = document.getElementById('journalTreeWidget');
+                if (widget) widget.classList.add('collapsed');
+            }
         });
 
         // ===== 导出数据 =====
