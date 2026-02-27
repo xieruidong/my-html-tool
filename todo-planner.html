@@ -1588,32 +1588,51 @@
             border-radius: 4px;
         }
 
-        /* 年份分隔线 */
-        .journal-tl-year-sep {
-            text-align: center;
-            font-size: 11px;
-            color: #c4a882;
-            letter-spacing: 2px;
-            margin: 8px 16px 16px;
-            position: relative;
+        /* ===== 年/月 分组层级 ===== */
+        .journal-tl-section-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: background 0.15s;
         }
 
-        .journal-tl-year-sep::before,
-        .journal-tl-year-sep::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 30%;
-            height: 1px;
-            background: rgba(196, 168, 130, 0.4);
+        .journal-tl-section-header:hover {
+            background: rgba(198, 134, 66, 0.08);
         }
 
-        .journal-tl-year-sep::before {
-            left: 0;
+        .journal-tl-year-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #8B4513;
+            font-family: 'Noto Serif SC', serif;
         }
 
-        .journal-tl-year-sep::after {
-            right: 0;
+        .journal-tl-month-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a06030;
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        .journal-tl-year-body,
+        .journal-tl-month-body {
+            /* 展开时正常显示 */
+        }
+
+        .journal-tl-year-body.collapsed,
+        .journal-tl-month-body.collapsed {
+            display: none;
+        }
+
+        .journal-tl-month-group {
+            margin-left: 12px;
+            border-left: 1px dashed rgba(196, 168, 130, 0.4);
+            padding-left: 8px;
+            margin-bottom: 4px;
         }
 
         /* 触发按钮 */
@@ -1647,162 +1666,11 @@
             }
         }
 
-        /* 小屏：时光回廊默认收起，尺寸收窄 */
-        @media (max-width: 768px) {
-            .journal-tree-widget {
-                width: 160px;
-                top: 60px;
-                right: 10px;
-            }
-        }
-
-        /* ===== 右上角树状日志导航 ===== */
-        .journal-tree-widget {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            width: 220px;
-            background: rgba(253, 248, 240, 0.97);
-            border: 1px solid #e8d9c4;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(139, 69, 19, 0.15);
-            z-index: 900;
-            font-size: 12px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            max-height: calc(100vh - 100px);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .journal-tree-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            background: linear-gradient(135deg, #8B4513, #c68642);
-            color: white;
-            font-family: 'Noto Serif SC', serif;
-            font-weight: 700;
-            font-size: 12px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            flex-shrink: 0;
-            user-select: none;
-        }
-
-        .journal-tree-toggle {
-            font-size: 10px;
-            opacity: 0.8;
-            transition: transform 0.2s;
-        }
-
-        .journal-tree-widget.collapsed .journal-tree-toggle {
-            transform: rotate(-90deg);
-        }
-
-        .journal-tree-body {
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .journal-tree-widget.collapsed .journal-tree-body {
-            display: none;
-        }
-
-        .journal-tree-body::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .journal-tree-body::-webkit-scrollbar-thumb {
-            background: #c4a882;
-            border-radius: 2px;
-        }
-
-        .jtree-year>summary {
-            padding: 6px 12px;
-            font-weight: 700;
-            color: #8B4513;
-            cursor: pointer;
-            list-style: none;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            user-select: none;
-        }
-
-        .jtree-year>summary::-webkit-details-marker {
-            display: none;
-        }
-
-        .jtree-year>summary::before {
-            content: '▶';
-            font-size: 8px;
-            transition: transform 0.15s;
-            color: #c68642;
-        }
-
-        .jtree-year[open]>summary::before {
-            transform: rotate(90deg);
-        }
-
-        .jtree-month>summary {
-            padding: 4px 12px 4px 22px;
-            color: #a06030;
-            cursor: pointer;
-            list-style: none;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            user-select: none;
-        }
-
-        .jtree-month>summary::-webkit-details-marker {
-            display: none;
-        }
-
-        .jtree-month>summary::before {
-            content: '▶';
-            font-size: 7px;
-            transition: transform 0.15s;
-            color: #c68642;
-        }
-
-        .jtree-month[open]>summary::before {
-            transform: rotate(90deg);
-        }
-
-        .jtree-day {
-            padding: 3px 12px 3px 32px;
-            color: #805030;
-            cursor: pointer;
-            border-radius: 4px;
-            margin: 1px 6px;
-            transition: background 0.15s;
-        }
-
-        .jtree-day:hover {
-            background: rgba(198, 134, 66, 0.15);
-        }
-
-        .jtree-day.today {
-            color: #8B4513;
-            font-weight: 700;
-        }
-
         .journal-tl-entries {
             padding: 4px 8px;
             display: flex;
             flex-direction: column;
             gap: 12px;
-        }
-
-        .journal-tree-empty {
-            padding: 16px 12px;
-            color: #c4a882;
-            text-align: center;
-            font-family: 'Noto Serif SC', serif;
-            line-height: 1.8;
         }
     </style>
 </head>
@@ -2033,15 +1901,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- 右上角树状日志导航 (时光回廊) -->
-    <div class="journal-tree-widget" id="journalTreeWidget">
-        <div class="journal-tree-header" onclick="toggleJournalTree()">
-            <span>🏛️ 时光回廊</span>
-            <span class="journal-tree-toggle" id="journalTreeToggle">▼</span>
-        </div>
-        <div class="journal-tree-body" id="journalTreeBody"></div>
     </div>
 
     <script>
@@ -2807,8 +2666,11 @@
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+            const now = new Date();
+            const yearNow = now.getFullYear();
+            const monthNow = now.getMonth() + 1;
 
-            // 按天分组
+            // 按年→月→日 三级分组
             const grouped = {};
             filteredJournals.forEach(entry => {
                 const d = new Date(entry.createdAt);
@@ -2816,70 +2678,97 @@
                 const month = d.getMonth() + 1;
                 const day = d.getDate();
                 const dayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                if (!grouped[dayStr]) grouped[dayStr] = { year, month, day, entries: [] };
-                grouped[dayStr].entries.push(entry);
+                if (!grouped[year]) grouped[year] = {};
+                if (!grouped[year][month]) grouped[year][month] = {};
+                if (!grouped[year][month][dayStr]) grouped[year][month][dayStr] = { day, entries: [] };
+                grouped[year][month][dayStr].entries.push(entry);
             });
 
-            const sortedDays = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
-            let html = '<div class="journal-timeline">';
-            let lastYear = null;
-
-            // Emoji 提取正则
+            const PREVIEW_LEN = 75;
             const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/;
+            const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
+            let html = '<div class="journal-timeline">';
 
-            sortedDays.forEach(dayStr => {
-                const { year, month, day, entries } = grouped[dayStr];
+            sortedYears.forEach(year => {
+                const isCurrentYear = parseInt(year) === yearNow;
+                const yearCollapsed = !isCurrentYear && !searchTerm;
+                const yearTotal = Object.values(grouped[year]).reduce((s, m) =>
+                    s + Object.values(m).reduce((s2, d) => s2 + d.entries.length, 0), 0);
 
-                if (lastYear !== null && lastYear !== year) {
-                    html += `<div class="journal-tl-year-sep">${lastYear} 年</div>`;
-                }
-                lastYear = year;
-
-                let dayLabel;
-                if (dayStr === todayStr) dayLabel = `今天 · ${month}月${day}日`;
-                else if (dayStr === yesterdayStr) dayLabel = `昨天 · ${month}月${day}日`;
-                else dayLabel = `${month}月${day}日`;
-
-                const isToday = dayStr === todayStr;
-                const isCollapsed = !isToday && !searchTerm; // 搜索时全部展开
-                html += `<div class="journal-tl-day" data-daystr="${dayStr}">`;
-                html += `<div class="journal-tl-day-header journal-tl-day-toggle" onclick="toggleJournalDay(this)">
-                    <div class="journal-tl-dot ${isToday ? 'today' : ''}"></div>
-                    <span class="journal-tl-date ${isToday ? 'today' : ''}">${dayLabel}</span>
-                    <span class="journal-tl-count">${entries.length}条</span>
-                    <span class="journal-tl-arrow ${isCollapsed ? 'collapsed' : ''}">▾</span>
+                html += `<div class="journal-tl-year-group">`;
+                html += `<div class="journal-tl-section-header" onclick="toggleJournalSection(this)">
+                    <span class="journal-tl-arrow ${yearCollapsed ? 'collapsed' : ''}">▾</span>
+                    <span class="journal-tl-year-label">📅 ${year}年</span>
+                    <span class="journal-tl-count">${yearTotal}条</span>
                 </div>`;
-                html += `<div class="journal-tl-entries ${isCollapsed ? 'collapsed' : ''}">`;
+                html += `<div class="journal-tl-year-body ${yearCollapsed ? 'collapsed' : ''}">`;
 
-                const PREVIEW_LEN = 75;
-                entries.forEach(entry => {
-                    const t = new Date(entry.createdAt);
-                    const timeStr = t.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                const sortedMonths = Object.keys(grouped[year]).sort((a, b) => b - a);
+                sortedMonths.forEach(month => {
+                    const isCurrentMonth = isCurrentYear && parseInt(month) === monthNow;
+                    const monthCollapsed = !isCurrentMonth && !searchTerm;
+                    const monthTotal = Object.values(grouped[year][month]).reduce((s, d) => s + d.entries.length, 0);
 
-                    // 尝试提取开头的 Emoji
-                    let customIcon = '';
-                    const match = entry.content.match(emojiRegex);
-                    if (match && entry.content.indexOf(match[0]) < 5) { // 仅限前5个字符内
-                        customIcon = `<span style="font-size:16px;margin-right:8px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1))">${match[0]}</span>`;
-                    }
-
-                    const needsTruncate = entry.content.length > PREVIEW_LEN;
-                    let contentHtml;
-                    if (needsTruncate) {
-                        const preview = escapeHtml(entry.content.slice(0, PREVIEW_LEN));
-                        const full = escapeHtml(entry.content);
-                        contentHtml = `<span class="jc-preview">${preview}···</span><span class="jc-full" style="display:none">${full}</span><button class="journal-expand-btn" onclick="toggleJournalContent(${entry.id})">展开</button>`;
-                    } else {
-                        contentHtml = escapeHtml(entry.content);
-                    }
-
-                    html += `<div class="journal-tl-entry">
-                        <div class="journal-tl-content" id="jcontent-${entry.id}">${customIcon}${contentHtml}</div>
-                        <div class="journal-tl-time">${timeStr}</div>
-                        <button class="journal-entry-delete" onclick="deleteJournal(${entry.id})" title="删除">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                    html += `<div class="journal-tl-month-group">`;
+                    html += `<div class="journal-tl-section-header" onclick="toggleJournalSection(this)">
+                        <span class="journal-tl-arrow ${monthCollapsed ? 'collapsed' : ''}">▾</span>
+                        <span class="journal-tl-month-label">📖 ${month}月</span>
+                        <span class="journal-tl-count">${monthTotal}条</span>
                     </div>`;
+                    html += `<div class="journal-tl-month-body ${monthCollapsed ? 'collapsed' : ''}">`;
+
+                    const sortedDays = Object.keys(grouped[year][month]).sort((a, b) => b.localeCompare(a));
+                    sortedDays.forEach(dayStr => {
+                        const { day, entries } = grouped[year][month][dayStr];
+                        const isToday = dayStr === todayStr;
+                        const isYesterday = dayStr === yesterdayStr;
+                        const dayCollapsed = !isToday && !searchTerm;
+
+                        let dayLabel;
+                        if (isToday) dayLabel = `今天 · ${month}月${day}日`;
+                        else if (isYesterday) dayLabel = `昨天 · ${month}月${day}日`;
+                        else dayLabel = `${month}月${day}日`;
+
+                        html += `<div class="journal-tl-day" data-daystr="${dayStr}">`;
+                        html += `<div class="journal-tl-day-header journal-tl-day-toggle" onclick="toggleJournalDay(this)">
+                            <div class="journal-tl-dot ${isToday ? 'today' : ''}"></div>
+                            <span class="journal-tl-date ${isToday ? 'today' : ''}">${dayLabel}</span>
+                            <span class="journal-tl-count">${entries.length}条</span>
+                            <span class="journal-tl-arrow ${dayCollapsed ? 'collapsed' : ''}">▾</span>
+                        </div>`;
+                        html += `<div class="journal-tl-entries ${dayCollapsed ? 'collapsed' : ''}">`;
+
+                        entries.forEach(entry => {
+                            const t = new Date(entry.createdAt);
+                            const timeStr = t.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+                            let customIcon = '';
+                            const match = entry.content.match(emojiRegex);
+                            if (match && entry.content.indexOf(match[0]) < 5) {
+                                customIcon = `<span style="font-size:16px;margin-right:8px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1))">${match[0]}</span>`;
+                            }
+
+                            const needsTruncate = entry.content.length > PREVIEW_LEN;
+                            let contentHtml;
+                            if (needsTruncate) {
+                                const preview = escapeHtml(entry.content.slice(0, PREVIEW_LEN));
+                                const full = escapeHtml(entry.content);
+                                contentHtml = `<span class="jc-preview">${preview}···</span><span class="jc-full" style="display:none">${full}</span><button class="journal-expand-btn" onclick="toggleJournalContent(${entry.id})">展开</button>`;
+                            } else {
+                                contentHtml = escapeHtml(entry.content);
+                            }
+
+                            html += `<div class="journal-tl-entry">
+                                <div class="journal-tl-content" id="jcontent-${entry.id}">${customIcon}${contentHtml}</div>
+                                <div class="journal-tl-time">${timeStr}</div>
+                                <button class="journal-entry-delete" onclick="deleteJournal(${entry.id})" title="删除">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>`;
+                        });
+                        html += `</div></div>`;
+                    });
+                    html += `</div></div>`;
                 });
                 html += `</div></div>`;
             });
@@ -2901,7 +2790,7 @@
             btn.textContent = isExpanded ? '展开' : '收起';
         }
 
-        // 切换日期分组折叠/展开
+        // 切换日期分组折叠/展开（日级）
         function toggleJournalDay(headerEl) {
             const entriesEl = headerEl.nextElementSibling;
             const arrow = headerEl.querySelector('.journal-tl-arrow');
@@ -2909,84 +2798,12 @@
             arrow.classList.toggle('collapsed', isNowCollapsed);
         }
 
-        // ===== 右上角树状日志导航 =====
-
-        function renderJournalTree() {
-            const treeBody = document.getElementById('journalTreeBody');
-            if (!treeBody) return;
-
-            if (journals.length === 0) {
-                treeBody.innerHTML = '<div class="journal-tree-empty">暂无日志<br>📝 开始记录吧</div>';
-                return;
-            }
-
-            const todayStr = getFormattedDateString();
-            const now = new Date();
-            const yearNow = now.getFullYear();
-            const monthNow = now.getMonth() + 1;
-
-            // 按年→月→日分组（只需 count）
-            const grouped = {};
-            journals.forEach(entry => {
-                const d = new Date(entry.createdAt);
-                const year = d.getFullYear();
-                const month = d.getMonth() + 1;
-                const day = d.getDate();
-                const dayStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                if (!grouped[year]) grouped[year] = {};
-                if (!grouped[year][month]) grouped[year][month] = {};
-                if (!grouped[year][month][day]) grouped[year][month][day] = { dayStr, count: 0 };
-                grouped[year][month][day].count++;
-            });
-
-            const years = Object.keys(grouped).sort((a, b) => b - a);
-            let html = '';
-
-            years.forEach(year => {
-                const months = Object.keys(grouped[year]).sort((a, b) => b - a);
-                const yearOpen = parseInt(year) === yearNow ? 'open' : '';
-                html += `<details class="jtree-year" ${yearOpen}><summary>📅 ${year}年</summary>`;
-
-                months.forEach(month => {
-                    const days = Object.keys(grouped[year][month]).sort((a, b) => b - a);
-                    const monthOpen = ''; // 月份默认不展开，点击才展开
-                    const totalInMonth = days.reduce((s, d) => s + grouped[year][month][d].count, 0);
-                    html += `<details class="jtree-month" ${monthOpen}><summary>📖 ${month}月 <span style="color:#c4a882;margin-left:4px">${totalInMonth}条</span></summary>`;
-
-                    days.forEach(day => {
-                        const { dayStr, count } = grouped[year][month][day];
-                        const isToday = dayStr === todayStr;
-                        const dayLabel = isToday ? `${day}日 · 今天` : `${day}日`;
-                        html += `<div class="jtree-day ${isToday ? 'today' : ''}" onclick="openJournalToDate('${dayStr}')" title="跳转到${dayStr}">🗒 ${dayLabel} <span style="color:#c4a882">(${count})</span></div>`;
-                    });
-
-                    html += '</details>';
-                });
-
-                html += '</details>';
-            });
-
-            treeBody.innerHTML = html;
-        }
-
-        // 点击树状节点，打开弹窗并定位到对应日期
-        function openJournalToDate(targetDate) {
-            openJournal();
-            setTimeout(() => {
-                const listEl = document.getElementById('journalList');
-                if (!listEl) return;
-                const dayEls = listEl.querySelectorAll('.journal-tl-day[data-daystr]');
-                dayEls.forEach(el => {
-                    if (el.dataset.daystr === targetDate) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                });
-            }, 400);
-        }
-
-        function toggleJournalTree() {
-            const widget = document.getElementById('journalTreeWidget');
-            widget.classList.toggle('collapsed');
+        // 切换年/月分组折叠/展开
+        function toggleJournalSection(headerEl) {
+            const body = headerEl.nextElementSibling;
+            const arrow = headerEl.querySelector('.journal-tl-arrow');
+            const isNowCollapsed = body.classList.toggle('collapsed');
+            arrow.classList.toggle('collapsed', isNowCollapsed);
         }
 
         // ===== 分隔符成语引导句 =====
@@ -3057,13 +2874,6 @@
                 const idx = Math.floor(Math.random() * JOURNAL_PROMPTS.length);
                 prompt.innerHTML = '✨ ' + JOURNAL_PROMPTS[idx];
                 prompt.style.display = 'block';
-            }
-            // 初始渲染右上角树状导航
-            renderJournalTree();
-            // 小屏默认折叠时光回廊
-            if (window.innerWidth <= 768) {
-                const widget = document.getElementById('journalTreeWidget');
-                if (widget) widget.classList.add('collapsed');
             }
         });
 
