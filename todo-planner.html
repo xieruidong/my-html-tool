@@ -2118,10 +2118,6 @@
                 saveTodos();
                 renderTodos();
                 updateStats();
-                // 若弹窗已打开则同步刷新
-                if (document.getElementById('completedModal').classList.contains('active')) {
-                    renderCompletedTodos();
-                }
             }
         }
 
@@ -2324,11 +2320,11 @@
                 todoList.innerHTML = sortedActive.map(renderTodoItem).join('');
             }
 
+            renderCompletedTodos();
         }
 
         // 打开已完成弹窗
         function openCompletedPanel() {
-            renderCompletedTodos();
             document.getElementById('completedModal').classList.add('active');
         }
 
