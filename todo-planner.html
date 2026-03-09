@@ -765,6 +765,47 @@
             background: #667eea;
         }
 
+        /* 已完成分区 */
+        .completed-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            margin-top: 12px;
+            cursor: pointer;
+            color: #999;
+            font-size: 13px;
+            font-weight: 500;
+            border-top: 1px dashed #e0e0e0;
+            user-select: none;
+        }
+
+        .completed-section-header:hover {
+            color: #666;
+        }
+
+        .completed-section-arrow {
+            font-size: 12px;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .completed-section-arrow.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .completed-count {
+            background: #e0e0e0;
+            color: #999;
+            font-size: 11px;
+            padding: 1px 7px;
+            border-radius: 10px;
+        }
+
+        .completed-section-body.collapsed {
+            display: none;
+        }
+
         /* 滚动条样式 */
         .item-list::-webkit-scrollbar {
             width: 8px;
@@ -853,6 +894,18 @@
         /* 隐藏的文件输入框 */
         #importFile {
             display: none;
+        }
+
+        /* 已完成按钮 */
+        .btn-completed {
+            background: linear-gradient(135deg, #2f9e44 0%, #40c057 100%);
+            color: white;
+            box-shadow: 0 4px 6px rgba(47, 158, 68, 0.25);
+        }
+
+        .btn-completed:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(47, 158, 68, 0.4);
         }
 
         /* 待办转计划按钮 */
@@ -1774,6 +1827,9 @@
                         <span>➕</span>
                         <span>添加待办</span>
                     </button>
+                    <button class="btn btn-completed" onclick="openCompletedPanel()">
+                        ✓ 已完成
+                    </button>
                 </div>
 
                 <div class="item-list" id="todoList"></div>
@@ -1827,6 +1883,17 @@
                 </div>
 
                 <div class="item-list" id="planList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 已完成待办弹窗 -->
+    <div class="modal-overlay" id="completedModal" onclick="handleCompletedModalClick(event)">
+        <div class="modal" style="max-width:520px;width:92%;">
+            <div class="modal-header">✅ 已完成待办</div>
+            <div class="item-list" id="completedTodoList" style="max-height:55vh;overflow-y:auto;margin-bottom:15px;"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeCompletedPanel()">关闭</button>
             </div>
         </div>
     </div>
@@ -2051,6 +2118,10 @@
                 saveTodos();
                 renderTodos();
                 updateStats();
+                // 若弹窗已打开则同步刷新
+                if (document.getElementById('completedModal').classList.contains('active')) {
+                    renderCompletedTodos();
+                }
             }
         }
 
@@ -2157,6 +2228,67 @@
             renderTodos();
         }
 
+        // 渲染单个待办项
+        function renderTodoItem(todo) {
+            const priorityClass = `priority-${todo.priority}`;
+            const priorityText = { high: '高', medium: '中', low: '低' }[todo.priority];
+            const categoryText = { work: '工作', study: '学习', life: '生活' }[todo.category];
+            const createdAt = new Date(todo.createdAt);
+            const now = new Date();
+            const diffDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+            const isOld = diffDays >= 7;
+            const isEditing = editingTodoId === todo.id;
+
+            return `
+                <div class="item ${todo.completed ? 'completed' : ''} ${todo.priority}-priority ${isOld ? 'old-task' : ''}">
+                    <input type="checkbox" class="item-checkbox" ${todo.completed ? 'checked' : ''}
+                           onchange="toggleTodo(${todo.id})">
+                    <div class="item-content">
+                        ${isEditing ? `
+                            <div class="edit-form active" data-id="${todo.id}">
+                                <input type="text" class="edit-title" value="${escapeHtml(todo.title)}" placeholder="标题">
+                                <textarea class="edit-description" placeholder="描述">${escapeHtml(todo.description)}</textarea>
+                                <select class="edit-priority">
+                                    <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>🟢 低优先级</option>
+                                    <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>🟡 中优先级</option>
+                                    <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>🔴 高优先级</option>
+                                </select>
+                                <select class="edit-category">
+                                    <option value="work" ${todo.category === 'work' ? 'selected' : ''}>工作</option>
+                                    <option value="study" ${todo.category === 'study' ? 'selected' : ''}>学习</option>
+                                    <option value="life" ${todo.category === 'life' ? 'selected' : ''}>生活</option>
+                                </select>
+                                <div class="edit-form-actions">
+                                    <button class="btn btn-primary btn-small" onclick="saveEditTodo(${todo.id})">保存</button>
+                                    <button class="btn btn-secondary btn-small" onclick="cancelEdit()">取消</button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="item-main">
+                                <span class="item-title" onclick="startEditTodo(${todo.id})">${escapeHtml(todo.title)}</span>
+                                ${todo.description ? `<span class="item-description">· ${escapeHtml(todo.description)}</span>` : ''}
+                            </div>
+                            <div class="item-meta">
+                                <span class="priority-badge ${priorityClass}">
+                                    <span class="priority-dot"></span>
+                                    ${priorityText}优先级
+                                </span>
+                                <span class="category-badge">${categoryText}</span>
+                                <span>${todo.completed && todo.completedAt ? '完成于 ' + formatDate(todo.completedAt) : formatDate(todo.createdAt)}</span>
+                            </div>
+                        `}
+                    </div>
+                    ${!isEditing ? `
+                        <div class="item-actions">
+                            ${!todo.completed ? `<button class="btn btn-todo-to-plan btn-small" onclick="addTodoToPlan(${todo.id})" title="添加到今日计划">📅</button>` : ''}
+                            <button class="btn btn-edit btn-small" onclick="startEditTodo(${todo.id})" title="编辑">✏️</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteTodo(${todo.id})" title="删除">🗑️</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
         // 渲染待办事项列表
         function renderTodos() {
             const todoList = document.getElementById('todoList');
@@ -2167,7 +2299,6 @@
                 filteredTodos = todos.filter(todo => todo.category === currentCategoryFilter);
             }
 
-            // 统一空状态逻辑：如果没有任务，显示提示；如果有任务但筛选后为空，显示相应提示
             if (todos.length === 0) {
                 todoList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>还没有待办事项，添加一个开始吧！</p></div>';
                 return;
@@ -2179,77 +2310,50 @@
                 return;
             }
 
-            // 按优先级和完成状态排序
-            const sortedTodos = [...filteredTodos].sort((a, b) => {
-                if (a.completed !== b.completed) {
-                    return a.completed ? 1 : -1;
-                }
+            const activeTodos = filteredTodos.filter(t => !t.completed);
+
+            // 按优先级排序活跃待办
+            const sortedActive = [...activeTodos].sort((a, b) => {
                 const priorityOrder = { high: 3, medium: 2, low: 1 };
                 return priorityOrder[b.priority] - priorityOrder[a.priority];
             });
 
-            todoList.innerHTML = sortedTodos.map(todo => {
-                const priorityClass = `priority-${todo.priority}`;
-                const priorityText = { high: '高', medium: '中', low: '低' }[todo.priority];
-                const categoryText = { work: '工作', study: '学习', life: '生活' }[todo.category];
+            if (sortedActive.length === 0) {
+                todoList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎉</div><p>所有待办均已完成！</p></div>';
+            } else {
+                todoList.innerHTML = sortedActive.map(renderTodoItem).join('');
+            }
 
-                // 判断是否为旧任务（7天前）
-                const createdAt = new Date(todo.createdAt);
-                const now = new Date();
-                const diffDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
-                const isOld = diffDays >= 7;
+        }
 
-                const isEditing = editingTodoId === todo.id;
+        // 打开已完成弹窗
+        function openCompletedPanel() {
+            renderCompletedTodos();
+            document.getElementById('completedModal').classList.add('active');
+        }
 
-                return `
-                    <div class="item ${todo.completed ? 'completed' : ''} ${todo.priority}-priority ${isOld ? 'old-task' : ''}">
-                        <input type="checkbox" class="item-checkbox" ${todo.completed ? 'checked' : ''} 
-                               onchange="toggleTodo(${todo.id})">
-                        <div class="item-content">
-                            ${isEditing ? `
-                                <div class="edit-form active" data-id="${todo.id}">
-                                    <input type="text" class="edit-title" value="${escapeHtml(todo.title)}" placeholder="标题">
-                                    <textarea class="edit-description" placeholder="描述">${escapeHtml(todo.description)}</textarea>
-                                    <select class="edit-priority">
-                                        <option value="low" ${todo.priority === 'low' ? 'selected' : ''}>🟢 低优先级</option>
-                                        <option value="medium" ${todo.priority === 'medium' ? 'selected' : ''}>🟡 中优先级</option>
-                                        <option value="high" ${todo.priority === 'high' ? 'selected' : ''}>🔴 高优先级</option>
-                                    </select>
-                                    <select class="edit-category">
-                                        <option value="work" ${todo.category === 'work' ? 'selected' : ''}>工作</option>
-                                        <option value="study" ${todo.category === 'study' ? 'selected' : ''}>学习</option>
-                                        <option value="life" ${todo.category === 'life' ? 'selected' : ''}>生活</option>
-                                    </select>
-                                    <div class="edit-form-actions">
-                                        <button class="btn btn-primary btn-small" onclick="saveEditTodo(${todo.id})">保存</button>
-                                        <button class="btn btn-secondary btn-small" onclick="cancelEdit()">取消</button>
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="item-main">
-                                    <span class="item-title" onclick="startEditTodo(${todo.id})">${escapeHtml(todo.title)}</span>
-                                    ${todo.description ? `<span class="item-description">· ${escapeHtml(todo.description)}</span>` : ''}
-                                </div>
-                                <div class="item-meta">
-                                    <span class="priority-badge ${priorityClass}">
-                                        <span class="priority-dot"></span>
-                                        ${priorityText}优先级
-                                    </span>
-                                    <span class="category-badge">${categoryText}</span>
-                                    <span>${formatDate(todo.createdAt)}</span>
-                                </div>
-                            `}
-                        </div>
-                        ${!isEditing ? `
-                            <div class="item-actions">
-                                <button class="btn btn-todo-to-plan btn-small" onclick="addTodoToPlan(${todo.id})" title="添加到今日计划">📅</button>
-                                <button class="btn btn-edit btn-small" onclick="startEditTodo(${todo.id})" title="编辑">✏️</button>
-                                <button class="btn btn-danger btn-small" onclick="deleteTodo(${todo.id})" title="删除">🗑️</button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
+        // 关闭已完成弹窗
+        function closeCompletedPanel() {
+            document.getElementById('completedModal').classList.remove('active');
+        }
+
+        function handleCompletedModalClick(e) {
+            if (e.target === document.getElementById('completedModal')) closeCompletedPanel();
+        }
+
+        // 渲染已完成待办列表（弹窗内）
+        function renderCompletedTodos() {
+            const listEl = document.getElementById('completedTodoList');
+            if (!listEl) return;
+
+            const completedTodos = todos.filter(t => t.completed)
+                .sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt));
+
+            if (completedTodos.length === 0) {
+                listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>还没有已完成的待办</p></div>';
+                return;
+            }
+            listEl.innerHTML = completedTodos.map(renderTodoItem).join('');
         }
 
         // 添加计划
@@ -2620,7 +2724,6 @@
             input.value = '';
             input.focus();
             renderJournals();
-            renderJournalTree();
             showToast('日志已保存 ✍️', 'success');
         }
 
@@ -2629,7 +2732,6 @@
                 journals = journals.filter(j => j.id !== id);
                 saveJournals();
                 renderJournals();
-                renderJournalTree();
             });
         }
 
@@ -2955,14 +3057,34 @@
             const todo = todos.find(t => t.id === todoId);
             if (!todo) return;
 
-            // 填充到日计划输入框
-            const today = getFormattedDateString();
-            document.getElementById('planDate').value = today;
-            document.getElementById('planCategory').value = todo.category || 'work';
-            document.getElementById('planContent').value = todo.title;
-            document.getElementById('planContent').focus();
+            confirmAction(`确定要将「${todo.title}」添加到今日计划？该待办将从列表中移除。`, () => {
+                const hour = new Date().getHours();
+                let period = 'morning';
+                if (hour >= 12 && hour < 18) period = 'afternoon';
+                else if (hour >= 18 || hour < 6) period = 'evening';
 
-            showToast('已填入今日计划，请选择时间并添加', 'info');
+                const today = getFormattedDateString();
+                const plan = {
+                    id: Date.now(),
+                    date: today,
+                    time: period,
+                    category: todo.category || 'work',
+                    content: todo.title,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+
+                plans.push(plan);
+                todos = todos.filter(t => t.id !== todoId);
+
+                savePlans();
+                saveTodos();
+                document.getElementById('planDate').value = today;
+                loadPlans();
+                renderTodos();
+                updateStats();
+                showToast('已添加到今日计划并从待办中移除', 'success');
+            });
         }
 
         // 计划转待办
